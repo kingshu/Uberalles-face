@@ -2,6 +2,7 @@ var request = require('request');
 var url = require('url');
 var http = require('http');
 
+var helpers = {};
 
 var server = http.createServer(function(req, res) {
 
@@ -13,8 +14,6 @@ var server = http.createServer(function(req, res) {
     });
     var parsedUrl = url.parse(req.url, true);
 
-    var helpers = {};
-
     if (parsedUrl.pathname == "/call") {
         var x = parsedUrl.query.latitude; 
         
@@ -22,12 +21,13 @@ var server = http.createServer(function(req, res) {
         res.end(JSON.stringify(respObj));
     }
 
-    if (parsedUrl.pathname == "checkin") {
+    if (parsedUrl.pathname == "/checkin") {
         var helper_location = {
             latitude: parsedUrl.query.latitude,
             longitude: parsedUrl.query.longitude
         };
         helpers[parsedUrl.query.name] = helper_location;
+console.log(helpers);
         respObj = { success:"true", message:"checked in" };
         res.end(JSON.stringify(respObj));
     }
