@@ -5,6 +5,11 @@ var databaseUrl = "uberalles"; // "username:password@example.com/mydb"
 var collections = ["helpers"]
 var db = require("mongojs").connect(databaseUrl, collections);
 
+var accountSid = 'AC926ffe139c6cdcbf86d6aebecaca6fa1'; 
+var authToken = 'd2d15fb4ad696b3534143b9da245dfd2'; 
+
+var client = require('twilio')(accountSid, authToken); 
+
 var helpers = {};
 var requests = {};
 var matched = {};
@@ -19,9 +24,6 @@ var server = http.createServer(function(req, res) {
     });
     var parsedUrl = url.parse(req.url, true);
     var respObj = {};
-
-    console.log(parsedUrl.pathname);
-    console.log(parsedUrl.query);
 
     // ----------------------------------------------------------------- //
 
@@ -58,7 +60,7 @@ var server = http.createServer(function(req, res) {
             type: parsedUrl.query.type
         };
         requests[parsedUrl.query.user_name] = helpObj;
-
+console.log(requests);
         respObj = { success: "true", message: "Added to request queue" } ;
         res.end(JSON.stringify(respObj));
     }
@@ -86,7 +88,6 @@ var server = http.createServer(function(req, res) {
             }
             respObj.success = "true";
             respObj.message = "checked in";            
-
             res.end(JSON.stringify(respObj));
         });        
     }
@@ -97,14 +98,20 @@ var server = http.createServer(function(req, res) {
         matched[parsedUrl.query.acceptedName] = parsedUrl.query.user_name;
         respObj.success = "true";
         respObj.message = "accepted";
-        respObj.location = {
-            latitude : requests[parsedUrl.query.acceptedName].latitude,
-            longitude : requests[parsedUrl.query.acceptedName].longitude,
-            accuracy : requests[parsedUrl.query.acceptedName].accuracy
-        };
+        respObj.location = requests[parsedUrl.query.acceptedName].location;
         
-        delete requests[parsedUrl.query.acceptedName];
-
+        db.helpers.find({name: parsedUrl.query.acceptedName}, function(err, requestr) {
+            db.helpers.find({name: parsedUrl.query.user_name}, function(err, helpr) {
+                client.messages.create({  
+                    from: "+17746332212",
+                    to: ""+requestr[0].phone,
+                    body: helpr[0].realname+" is coming to help you!"    
+                }, function(err, message) {
+                     delete requests[parsedUrl.query.acceptedName]; 
+                });
+            });
+        });
+       
         res.end(JSON.stringify(respObj));
  
     }
@@ -138,7 +145,6 @@ var server = http.createServer(function(req, res) {
         for (var i in helpers) {
 
             db.helpers.find({name:i}, function(err, helpr) {
-                console.log(helpr);
                 allHelpers[i] = {
                     location: helpers[i],
                     skills : helpr[0].skills,
@@ -175,7 +181,7 @@ var server = http.createServer(function(req, res) {
             success: "true",
             message: "logged out"
         };
-        res.end(JSON.stringify(respObj);
+        res.end(JSON.stringify(respObj));
     }
 
     // ------------------------------------------------------------- //
