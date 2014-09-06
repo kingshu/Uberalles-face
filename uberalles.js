@@ -30,7 +30,9 @@ var server = http.createServer(function(req, res) {
         { name: parsedUrl.query.name },
         {
             name: parsedUrl.query.name,
-            skills: parsedUrl.query.skills
+            skills: parsedUrl.query.skills,
+            realname: parsedUrl.query.realname,
+            age: parsedUrl.query.age
         },
         { upsert: true },
         function() {
@@ -132,13 +134,26 @@ var server = http.createServer(function(req, res) {
             db.helpers.find({name:i}, function(err, helpr) {
                 allHelpers[i] = {
                     location: helpers[i],
-                    skills : helpr[0].skills
+                    skills : helpr[0].skills,
+                    realname: helpr[0].realname,
+                    age: helpr[0].age
                 };
             });
         }
         setTimeout( function() {
             res.end(JSON.stringify(allHelpers));
         }, 500);
+    }
+
+    // --------------------------------------------------------------- //
+    
+    else if (parsedUrl.pathname == "/getUserDetails") {
+        db.helpers.find({name:parsedUrl.query.name}, function(err, helpr) {
+            if (typeof helpr[0] === 'undefined')
+                res.end("not found");
+            else
+                res.end(helpr[0]);
+        });
     }
 
     else {
