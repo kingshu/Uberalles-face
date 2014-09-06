@@ -23,10 +23,17 @@ var server = http.createServer(function(req, res) {
     // ----------------------------------------------------------------- //
 
     if (parsedUrl.pathname == "/register" ) {
-        db.helpers.save({
+        if (typeof parsedUrl.query.skills == "string") {
+            parsedUrl.query.skills = new Array(parsedUrl.query.skills);
+        }
+        db.helpers.update(
+        { name: parsedUrl.query.name },
+        {
             name: parsedUrl.query.name,
             skills: parsedUrl.query.skills
-        }, function() {
+        },
+        { upsert: true },
+        function() {
             respObj.success = "true";
             respObj.message = "registered";
             res.end(JSON.stringify(respObj));
@@ -35,10 +42,13 @@ var server = http.createServer(function(req, res) {
 
     // ------------------------------------------------------------------ //
 
-    if (parsedUrl.pathname == "/call") {
+    else if (parsedUrl.pathname == "/call") {
         var helpObj = {
-            latitude: parsedUrl.query.latitude,
-            longitude: parsedUrl.query.longitude,
+            location: {
+                latitude: parsedUrl.query.latitude,
+                longitude: parsedUrl.query.longitude,
+                accuracy: parsedUrl.query.accuracy
+            },
             type: parsedUrl.query.type
         };
         requests[parsedUrl.query.name] = helpObj;
@@ -49,65 +59,90 @@ var server = http.createServer(function(req, res) {
 
     // ------------------------------------------------------------------ //
 
-    if (parsedUrl.pathname == "/helpercheckin") {
+    else if (parsedUrl.pathname == "/helpercheckin") {
         var helper_location = {
             latitude: parsedUrl.query.latitude,
-            longitude: parsedUrl.query.longitude
+            longitude: parsedUrl.query.longitude,
+            accuracy: parsedUrl.query.accuracy
         };
         helpers[parsedUrl.query.name] = helper_location;
 
         respObj.requests = {};
-        
+
         // Find checked-in user's skills
-        db.helpers.find( {name: parsedUrl.query.name}, function(err, res) {
-        
+        db.helpers.find( {name: parsedUrl.query.name}, function(err, helpr) {
             for (var i in requests) {
                 // If skills match any requests
-                if ( res.skills.indexOf(requests[i].type) !== -1 ) {
+                if ( helpr[0].skills.indexOf(requests[i].type) !== -1 ) {
                     // Then add that request to the resp.
                     respObj.requests[i] = requests[i];
                 }
             }
             respObj.success = "true";
             respObj.message = "checked in";
-
+            
             res.end(JSON.stringify(respObj));
         });        
     }
 
     // ---------------------------------------------------------------- //
 
-    if (parsedUrl.pathname == "/accept") {
+    else if (parsedUrl.pathname == "/accept") {
         matched[parsedUrl.query.acceptedName] = parsedUrl.query.name;
         respObj.success = "true";
         respObj.message = "accepted";
-        respObj.latitude = requests[parsedUrl.query.acceptedName].latitude;
-        respObj.longitude = requests[parsedUrl.query.acceptedName].longitude;
+        respObj.location = {
+            latitude : requests[parsedUrl.query.acceptedName].latitude,
+            longitude : requests[parsedUrl.query.acceptedName].longitude,
+            accuracy : requests[parsedUrl.query.acceptedName].accuracy
+        };
         
         delete requests[parsedUrl.query.acceptedName];
 
-        res.end(respObj);
+        res.end(JSON.stringify(respObj));
  
     }
 
     // --------------------------------------------------------------- //
     
-    if (parsedUrl.pathname == "/requestorcheckin") {
+    else if (parsedUrl.pathname == "/requestorcheckin") {
         if (matched.hasOwnProperty(parsedUrl.query.name)) {
             respObj.success = "true";
             respObj.message = "match found";
             respObj.helper.name = matched[parsedUrl.query.name]
-            respObj.helper.latitude = helpers[respObj.helperName].latitude;
-            respObj.helper.longitude = helpers[respObj.helperName].longitude;
+            respObj.helper.location = {
+                latitude : helpers[respObj.helperName].latitude,
+                longitude : helpers[respObj.helperName].longitude,
+                accuracy : helpers[respObj,helperName].accuracy
+            }
         }
         else {
             respObj.success = "false";
             respObj.message = "no match yet";
             respObj.helper = {};
         }
-        res.end(respObj);
+        res.end(JSON.stringify(respObj));
     }
     
-    res.end("Unrecognized request, probably favico");
+    // --------------------------------------------------------------- //
+    
+    else if (parsedUrl.pathname == "/getAllHelpers") {
+        var allHelpers = {};
+        for (var i in helpers) {
+            db.helpers.find({name:i}, function(err, helpr) {
+                allHelpers[i] = {
+                    location: helpers[i],
+                    skills : helpr[0].skills
+                };
+            });
+        }
+        setTimeout( function() {
+            res.end(JSON.stringify(allHelpers));
+        }, 500);
+    }
+
+    else {
+        res.end("Unrecognized request, probably favico");
+    }
 
 }).listen(8080);
