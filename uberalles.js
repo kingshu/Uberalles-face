@@ -23,9 +23,14 @@ var server = http.createServer(function(req, res) {
     // ------------------------------------------------------------------ //
 
     if (parsedUrl.pathname == "/call") {
-        var x = parsedUrl.query.latitude; 
-        
-        respObj = { success: "false", message: "Incorrect username or pin" } ;
+        var helpObj = {
+            latitude: parsedUrl.query.latitude,
+            longitude: parsedUrl.query.longitude,
+            type: parsedUrl.query.type
+        };
+        requests[parsedUrl.query.name] = helpObj;
+
+        respObj = { success: "true", message: "Added to request queue" } ;
         res.end(JSON.stringify(respObj));
     }
 
