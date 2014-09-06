@@ -20,6 +20,17 @@ var server = http.createServer(function(req, res) {
     var parsedUrl = url.parse(req.url, true);
     var respObj = {};
 
+    if (parsedUrl.pathname == "/register" ) {
+        db.helpers.save({
+            name: parsedUrl.query.name,
+            skills: parsedUrl.query.skills
+        }, function() {
+            respObj.success = "true";
+            respObj.message = "registered";
+            res.end(JSON.stringify(respObj));
+        });
+    }
+
     // ------------------------------------------------------------------ //
 
     if (parsedUrl.pathname == "/call") {
@@ -47,6 +58,7 @@ var server = http.createServer(function(req, res) {
         
         // Find checked-in user's skills
         db.helpers.find( {name: parsedUrl.query.name}, function(err, res) {
+        
             for (var i in requests) {
                 // If skills match any requests
                 if ( res.skills.indexOf(requests[i].type) !== -1 ) {
@@ -54,13 +66,14 @@ var server = http.createServer(function(req, res) {
                     respObj.requests[i] = requests[i];
                 }
             }
+            respObj.success = "true";
+            respObj.message = "checked in";
+
+            res.end(JSON.stringify(respObj));
         });        
-
-        respObj.success = "true";
-        respObj.message = "checked in";
-
-        res.end(JSON.stringify(respObj));
     }
+
+    // ---------------------------------------------------------------- //
     
     res.end("Unrecognized request, probably favico");
 
