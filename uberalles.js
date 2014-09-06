@@ -8,6 +8,7 @@ var db = require("mongojs").connect(databaseUrl, collections);
 
 var helpers = {};
 var requests = {};
+var matched = {};
 
 var server = http.createServer(function(req, res) {
 
@@ -19,6 +20,8 @@ var server = http.createServer(function(req, res) {
     });
     var parsedUrl = url.parse(req.url, true);
     var respObj = {};
+
+    // ----------------------------------------------------------------- //
 
     if (parsedUrl.pathname == "/register" ) {
         db.helpers.save({
@@ -47,7 +50,7 @@ var server = http.createServer(function(req, res) {
 
     // ------------------------------------------------------------------ //
 
-    if (parsedUrl.pathname == "/checkin") {
+    if (parsedUrl.pathname == "/helpercheckin") {
         var helper_location = {
             latitude: parsedUrl.query.latitude,
             longitude: parsedUrl.query.longitude
@@ -74,6 +77,37 @@ var server = http.createServer(function(req, res) {
     }
 
     // ---------------------------------------------------------------- //
+
+    if (parsedUrl.pathname == "/accept") {
+        matched[parsedUrl.query.acceptedName] = parsedUrl.query.name;
+        respObj.success = "true";
+        respObj.message = "accepted";
+        respObj.latitude = requests[parsedUrl.query.acceptedName].latitude;
+        respObj.longitude = requests[parsedUrl.query.acceptedName].longitude;
+        
+        delete requests[parsedUrl.query.acceptedName];
+
+        res.end(respObj);
+ 
+    }
+
+    // --------------------------------------------------------------- //
+    
+    if (parsedUrl.pathname == "/requestorcheckin") {
+        if (matched.hasOwnProperty(parsedUrl.query.name)) {
+            respObj.success = "true";
+            respObj.message = "match found";
+            respObj.helper.name = matched[parsedUrl.query.name]
+            respObj.helper.latitude = helpers[respObj.helperName].latitude;
+            respObj.helper.longitude = helpers[respObj.helperName].longitude;
+        }
+        else {
+            respObj.success = "false";
+            respObj.message = "no match yet";
+            respObj.helper = {};
+        }
+        res.end(respObj);
+    }
     
     res.end("Unrecognized request, probably favico");
 
