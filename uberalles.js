@@ -5,7 +5,6 @@ var databaseUrl = "uberalles"; // "username:password@example.com/mydb"
 var collections = ["helpers"]
 var db = require("mongojs").connect(databaseUrl, collections);
 
-
 var helpers = {};
 var requests = {};
 var matched = {};
