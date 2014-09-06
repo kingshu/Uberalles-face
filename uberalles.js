@@ -20,6 +20,9 @@ var server = http.createServer(function(req, res) {
     var parsedUrl = url.parse(req.url, true);
     var respObj = {};
 
+    console.log(parsedUrl.pathname);
+    console.log(parsedUrl.query);
+
     // ----------------------------------------------------------------- //
 
     if (parsedUrl.pathname == "/register" ) {
@@ -29,9 +32,9 @@ var server = http.createServer(function(req, res) {
         db.helpers.update(
         { name: parsedUrl.query.name },
         {
-            name: parsedUrl.query.name,
+            name: parsedUrl.query.user_name,
             skills: parsedUrl.query.skills,
-            realname: parsedUrl.query.realname,
+            realname: parsedUrl.query.full_name,
             age: parsedUrl.query.age
         },
         { upsert: true },
@@ -53,7 +56,7 @@ var server = http.createServer(function(req, res) {
             },
             type: parsedUrl.query.type
         };
-        requests[parsedUrl.query.name] = helpObj;
+        requests[parsedUrl.query.user_name] = helpObj;
 
         respObj = { success: "true", message: "Added to request queue" } ;
         res.end(JSON.stringify(respObj));
@@ -67,12 +70,12 @@ var server = http.createServer(function(req, res) {
             longitude: parsedUrl.query.longitude,
             accuracy: parsedUrl.query.accuracy
         };
-        helpers[parsedUrl.query.name] = helper_location;
+        helpers[parsedUrl.query.user_name] = helper_location;
 
         respObj.requests = {};
 
         // Find checked-in user's skills
-        db.helpers.find( {name: parsedUrl.query.name}, function(err, helpr) {
+        db.helpers.find( {name: parsedUrl.query.user_name}, function(err, helpr) {
             for (var i in requests) {
                 // If skills match any requests
                 if ( helpr[0].skills.indexOf(requests[i].type) !== -1 ) {
@@ -81,8 +84,8 @@ var server = http.createServer(function(req, res) {
                 }
             }
             respObj.success = "true";
-            respObj.message = "checked in";
-            
+            respObj.message = "checked in";            
+
             res.end(JSON.stringify(respObj));
         });        
     }
@@ -90,7 +93,7 @@ var server = http.createServer(function(req, res) {
     // ---------------------------------------------------------------- //
 
     else if (parsedUrl.pathname == "/accept") {
-        matched[parsedUrl.query.acceptedName] = parsedUrl.query.name;
+        matched[parsedUrl.query.acceptedName] = parsedUrl.query.user_name;
         respObj.success = "true";
         respObj.message = "accepted";
         respObj.location = {
@@ -108,10 +111,10 @@ var server = http.createServer(function(req, res) {
     // --------------------------------------------------------------- //
     
     else if (parsedUrl.pathname == "/requestorcheckin") {
-        if (matched.hasOwnProperty(parsedUrl.query.name)) {
+        if (matched.hasOwnProperty(parsedUrl.query.user_name)) {
             respObj.success = "true";
             respObj.message = "match found";
-            respObj.helper.name = matched[parsedUrl.query.name]
+            respObj.helper.name = matched[parsedUrl.query.user_name]
             respObj.helper.location = {
                 latitude : helpers[respObj.helperName].latitude,
                 longitude : helpers[respObj.helperName].longitude,
@@ -135,8 +138,10 @@ var server = http.createServer(function(req, res) {
                 allHelpers[i] = {
                     location: helpers[i],
                     skills : helpr[0].skills,
-                    realname: helpr[0].realname,
-                    age: helpr[0].age
+                    info : {
+                        full_name: helpr[0].realname,
+                        age: helpr[0].age
+                    }
                 };
             });
         }
@@ -148,16 +153,21 @@ var server = http.createServer(function(req, res) {
     // --------------------------------------------------------------- //
     
     else if (parsedUrl.pathname == "/getUserDetails") {
-        db.helpers.find({name:parsedUrl.query.name}, function(err, helpr) {
+        db.helpers.find({name:parsedUrl.query.user_name}, function(err, helpr) {
             if (typeof helpr[0] === 'undefined')
                 res.end("not found");
             else
-                res.end(helpr[0]);
+                res.end(JSON.stringify(helpr[0]));
         });
     }
 
     else {
         res.end("Unrecognized request, probably favico");
     }
+
+    setTimeout(function(){
+        console.log(respObj);
+    }, 700);
+
 
 }).listen(8080);
