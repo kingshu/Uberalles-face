@@ -51,18 +51,26 @@ var server = http.createServer(function(req, res) {
     // ------------------------------------------------------------------ //
 
     else if (parsedUrl.pathname == "/call") {
-        var helpObj = {
-            location: {
-                latitude: parsedUrl.query.latitude,
-                longitude: parsedUrl.query.longitude,
-                accuracy: parsedUrl.query.accuracy
-            },
-            type: parsedUrl.query.type
-        };
-        requests[parsedUrl.query.user_name] = helpObj;
-console.log(requests);
-        respObj = { success: "true", message: "Added to request queue" } ;
-        res.end(JSON.stringify(respObj));
+       
+        db.helpers.find({name: parsedUrl.query.user_name}, function(err, callee) {
+            var helpObj = {
+                location: {
+                    latitude: parsedUrl.query.latitude,
+                    longitude: parsedUrl.query.longitude,
+                    accuracy: parsedUrl.query.accuracy
+                },
+                type: parsedUrl.query.type,
+                info: {
+                    full_name: callee[0].realname,
+                    age: callee[0].age,
+                    phone: callee[0].phone
+                }
+            };
+            requests[parsedUrl.query.user_name] = helpObj;
+
+            respObj = { success: "true", message: "Added to request queue" } ;
+            res.end(JSON.stringify(respObj));
+        });
     }
 
     // ------------------------------------------------------------------ //
@@ -140,12 +148,11 @@ console.log(requests);
     // --------------------------------------------------------------- //
     
     else if (parsedUrl.pathname == "/getAllUsers") {
-        var allHelpers = {};
+        var allUsers = {};
                 
         for (var i in helpers) {
-
             db.helpers.find({name:i}, function(err, helpr) {
-                allHelpers[i] = {
+                allUsers[i] = {
                     location: helpers[i],
                     skills : helpr[0].skills,
                     info : {
@@ -157,8 +164,16 @@ console.log(requests);
                 
             });
         }
+
+        
         setTimeout( function() {
-            res.end(JSON.stringify(allHelpers));
+            for ( var i in requests ) {
+                if (!allUsers.hasOwnProperty(i)) {
+                    allUsers[i] = requests[i];
+                    allUsers[i].skills = [];
+                }
+            }   
+            res.end(JSON.stringify(allUsers));
         }, 750);
     }
 
@@ -180,6 +195,17 @@ console.log(requests);
         respObj = {
             success: "true",
             message: "logged out"
+        };
+        res.end(JSON.stringify(respObj));
+    }
+
+     // -------------------------------------------------------------- //
+
+    else if (parsedUrl.pathname == "/cancelRequest" ) {
+        delete request[parsedUrl.query.user_name];
+        respObj = {
+            success: "true",
+            message: "cancelled"
         };
         res.end(JSON.stringify(respObj));
     }
