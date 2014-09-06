@@ -3,10 +3,21 @@ var authToken = 'd2d15fb4ad696b3534143b9da245dfd2';
  
 //require the Twilio module and create a REST client 
 var client = require('twilio')(accountSid, authToken); 
+
+/*
 client.sendMessage({
     to:'+5056522451', // Any number Twilio can deliver to
     from: '+17746332212', // A number you bought from Twilio and can use for outbound communication
     body: 'wosddg' // body of the SMS message
 }, function(err, responseData) { 
     console.log(responseData);
+});*/
+
+client.messages.create({  
+    from: "+17746332212",
+    to: "5056522451",
+    body: "herro"    
+}, function(err, message) {
+    console.log(err); 
+    console.log(message); 
 });

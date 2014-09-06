@@ -30,12 +30,13 @@ var server = http.createServer(function(req, res) {
             parsedUrl.query.skills = new Array(parsedUrl.query.skills);
         }
         db.helpers.update(
-        { name: parsedUrl.query.name },
+        { name: parsedUrl.query.user_name },
         {
             name: parsedUrl.query.user_name,
             skills: parsedUrl.query.skills,
             realname: parsedUrl.query.full_name,
-            age: parsedUrl.query.age
+            age: parsedUrl.query.age,
+            phone: parsedUrl.query.phone
         },
         { upsert: true },
         function() {
@@ -119,7 +120,7 @@ var server = http.createServer(function(req, res) {
                 latitude : helpers[respObj.helperName].latitude,
                 longitude : helpers[respObj.helperName].longitude,
                 accuracy : helpers[respObj,helperName].accuracy
-            }
+            };
         }
         else {
             respObj.success = "false";
@@ -131,23 +132,28 @@ var server = http.createServer(function(req, res) {
     
     // --------------------------------------------------------------- //
     
-    else if (parsedUrl.pathname == "/getAllHelpers") {
+    else if (parsedUrl.pathname == "/getAllUsers") {
         var allHelpers = {};
+                
         for (var i in helpers) {
+
             db.helpers.find({name:i}, function(err, helpr) {
+                console.log(helpr);
                 allHelpers[i] = {
                     location: helpers[i],
                     skills : helpr[0].skills,
                     info : {
                         full_name: helpr[0].realname,
-                        age: helpr[0].age
+                        age: helpr[0].age,
+                        phone: helpr[0].phone
                     }
                 };
+                
             });
         }
         setTimeout( function() {
             res.end(JSON.stringify(allHelpers));
-        }, 500);
+        }, 750);
     }
 
     // --------------------------------------------------------------- //
@@ -161,13 +167,21 @@ var server = http.createServer(function(req, res) {
         });
     }
 
+    // -------------------------------------------------------------- //
+
+    else if (parsedUrl.pathname == "/logout" ) {
+        delete helpers[parsedUrl.query.user_name];
+        respObj = {
+            success: "true",
+            message: "logged out"
+        };
+        res.end(JSON.stringify(respObj);
+    }
+
+    // ------------------------------------------------------------- //
+    
     else {
         res.end("Unrecognized request, probably favico");
     }
-
-    setTimeout(function(){
-        console.log(respObj);
-    }, 700);
-
 
 }).listen(8080);
