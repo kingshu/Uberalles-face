@@ -115,7 +115,7 @@ var server = http.createServer(function(req, res) {
                     to: ""+requestr[0].phone,
                     body: helpr[0].realname+" is coming to help you!"    
                 }, function(err, message) {
-                     delete requests[parsedUrl.query.acceptedName]; 
+                    delete requests[parsedUrl.query.acceptedName]; 
                 });
             });
         });
@@ -131,11 +131,9 @@ var server = http.createServer(function(req, res) {
             respObj.success = "true";
             respObj.message = "match found";
             respObj.helper = {};
-console.log(matched);
-            respObj.helper.name = matched[parsedUrl.query.user_name];
             var helperName = matched[parsedUrl.query.user_name];
-            respObj.helper.location = helpers[helperName].location;
-console.log(respObj);
+            respObj.helper.name = helperName;
+            respObj.helper.location = helpers[helperName];
         }
         else {
             respObj.success = "false";
