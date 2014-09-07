@@ -130,12 +130,12 @@ var server = http.createServer(function(req, res) {
         if (matched.hasOwnProperty(parsedUrl.query.user_name)) {
             respObj.success = "true";
             respObj.message = "match found";
-            respObj.helper.name = matched[parsedUrl.query.user_name]
-            respObj.helper.location = {
-                latitude : helpers[respObj.helperName].latitude,
-                longitude : helpers[respObj.helperName].longitude,
-                accuracy : helpers[respObj,helperName].accuracy
-            };
+            respObj.helper = {};
+console.log(matched);
+            respObj.helper.name = matched[parsedUrl.query.user_name];
+            var helperName = matched[parsedUrl.query.user_name];
+            respObj.helper.location = helpers[helperName].location;
+console.log(respObj);
         }
         else {
             respObj.success = "false";
